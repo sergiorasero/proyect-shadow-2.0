@@ -29,3 +29,5 @@ footer{text-align:center;padding:30px;color:#53667d;font:10px Rajdhani;letter-sp
 .intelligence-panel{display:flex;flex-direction:column;gap:6px;margin:0 0 16px;padding:16px 18px;border:1px solid rgba(115,170,220,.25);background:linear-gradient(110deg,rgba(40,86,126,.16),rgba(15,22,32,.8))}.intelligence-panel b{font-size:.78rem;letter-spacing:.12em;color:#9bc8ef}.intelligence-panel span{font-size:.86rem;color:var(--muted,#9aa8b8)}
 
 .learning-line{color:#9bc8ef!important;font-size:.76rem!important;letter-spacing:.02em}.mission .xp-tag{max-width:100%}
+
+.forecast-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}.forecast-grid span{border:1px solid rgba(115,170,220,.18);border-radius:6px;padding:8px;color:var(--muted);font-size:.72rem}.forecast-grid strong{display:block;color:var(--cyan);font:700 1.05rem Rajdhani}.forecast-note{margin:4px 0!important;font-size:.76rem!important}.intelligence-panel #rebalance-missions{align-self:flex-start;margin-top:4px}@media(max-width:520px){.forecast-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
