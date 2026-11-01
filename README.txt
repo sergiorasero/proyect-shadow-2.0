@@ -1,5 +1,11 @@
-PROJECT SHADOW — BUILD 03.0
+PROJECT SHADOW — BUILD 2.0
+REALISTIC PROGRESSION + SHADOW INTELLIGENCE 1.2.0
 REALISTIC PROGRESSION
+
+FUNCIONES PRINCIPALES DE SHADOW 2.0
+- Mantiene la interfaz y los módulos de progresión realista: misiones, perfil, atributos, habilidades, logros, retos de jefe, diario e historial.
+- SHADOW Intelligence 1.2.0: aprendizaje local a partir de resultados, ajuste gradual de dificultad por categoría, previsión de carga a siete días, detección de objetivos sin progreso reciente y priorización de misiones.
+- Motor local y gratuito: no requiere API externa ni servicios de pago. Las recomendaciones se calculan en el dispositivo.
 
 NUEVO EN ESTA VERSIÓN
 - Rangos E, D, C, B, A y S calculados a partir de la media de atributos confirmados.
