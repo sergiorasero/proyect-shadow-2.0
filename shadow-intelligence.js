@@ -81,7 +81,7 @@
   function create(state,period,key,now=Date.now()){
     const a=analyze(state,now);
     const goals=a.goals.length?a.goals:["Estudios y aprendizaje","Proyecto personal y tecnología","Organización y desarrollo personal"];
-    const count=period==="daily"?5:period==="weekly"?2:1;
+    const count=period==="daily"?(a.activeCount>=5?2:a.activeCount>=3?3:5):period==="weekly"?(a.activeCount>=5?1:2):1;
     const due=new Date(now);
     if(period==="daily")due.setHours(23,59,59,999);
     else if(period==="weekly"){const day=(due.getDay()+6)%7;due.setDate(due.getDate()+(6-day));due.setHours(23,59,59,999);}
@@ -113,6 +113,52 @@
     }
     return result;
   }
+
+  function predict(state,now=Date.now()){
+    const missions=Array.isArray(state.missions)?state.missions:[];
+    const goals=(Array.isArray(state.objectives)?state.objectives:[]).map(text).filter(Boolean);
+    const active=missions.filter(m=>!m.done&&!m.paused&&Number(m.dueAt)>now);
+    const next7=active.filter(m=>Number(m.dueAt)<=now+7*DAY);
+    const byDay={};
+    for(let i=0;i<7;i++){const d=new Date(now+i*DAY);const key=d.toISOString().slice(0,10);byDay[key]=next7.filter(m=>new Date(m.dueAt).toISOString().slice(0,10)===key).length;}
+    const peak=Math.max(0,...Object.values(byDay));
+    const outcomes=state.intelligence&&Array.isArray(state.intelligence.outcomes)?state.intelligence.outcomes:[];
+    const doneByGoal={};
+    for(const h of (Array.isArray(state.history)?state.history:[])){
+      if(h&&h.objective&&h.kind==="mission"&&h.date){const t=new Date(h.date).getTime();if(Number.isFinite(t))doneByGoal[h.objective]=Math.max(doneByGoal[h.objective]||0,t);}
+    }
+    for(const m of (Array.isArray(state.archive)?state.archive:[])){
+      if(m&&m.status==="completed"&&m.objective){doneByGoal[m.objective]=Math.max(doneByGoal[m.objective]||0,Number(m.archivedAt)||0);}
+    }
+    const stalled=goals.filter(g=>!doneByGoal[g]||now-doneByGoal[g]>=14*DAY).map(g=>({goal:g,lastProgressAt:doneByGoal[g]||null,daysSince:doneByGoal[g]?Math.floor((now-doneByGoal[g])/DAY):null}));
+    const risk=active.length>=8||peak>=4?"high":active.length>=5||peak>=3?"medium":"low";
+    const recommendations=[];
+    if(risk==="high")recommendations.push("Carga alta prevista: se generarán menos misiones nuevas y se priorizarán pasos breves.");
+    else if(risk==="medium")recommendations.push("Carga moderada: mantén las prioridades principales y evita añadir retos opcionales.");
+    else recommendations.push("Carga prevista equilibrada para los próximos días.");
+    if(stalled.length)recommendations.push("Hay objetivos sin progreso registrado recientemente: reserva un paso pequeño y concreto para uno de ellos.");
+    if(outcomes.length<4)recommendations.push("El aprendizaje está recopilando datos; las recomendaciones serán más precisas al registrar más resultados.");
+    return {risk,active:active.length,next7:next7.length,peakDaily:peak,byDay,stalled,recommendations};
+  }
+  function rebalance(state,now=Date.now()){
+    const forecast=predict(state,now);
+    const stalledSet=new Set(forecast.stalled.map(x=>x.goal));
+    const active=(Array.isArray(state.missions)?state.missions:[]).filter(m=>!m.done&&!m.paused&&Number(m.dueAt)>now);
+    active.forEach(m=>{
+      const remaining=Math.max(0,Number(m.dueAt)-now);
+      const urgency=remaining<=DAY?1:remaining<=3*DAY?0.8:remaining<=7*DAY?0.6:0.35;
+      const goal=m.objective||"";
+      const progressNeed=stalledSet.has(goal)?0.95:0.55;
+      const loadPenalty=forecast.risk==="high"?0.25:forecast.risk==="medium"?0.12:0;
+      const importance=m.category==="study"?0.88:m.category==="project"?0.82:0.68;
+      m.priorityScore=Math.round(clamp((importance*0.35+urgency*0.3+progressNeed*0.25+(1-loadPenalty)*0.1)*100,1,100));
+      m.reason=stalledSet.has(goal)?"Prioridad elevada: objetivo sin progreso reciente.":"Prioridad recalculada según plazo y carga prevista.";
+    });
+    if(!state.intelligence||typeof state.intelligence!=="object")state.intelligence={version:1,outcomes:[],adjustments:0};
+    state.intelligence.lastRebalanceAt=now;
+    state.intelligence.adjustments=(Number(state.intelligence.adjustments)||0)+1;
+    return {forecast,updated:active.length};
+  }
   function sort(missions){
     return missions.slice().sort((a,b)=>(Number(b.priorityScore)||0)-(Number(a.priorityScore)||0)||Number(a.dueAt)-Number(b.dueAt));
   }
@@ -122,5 +168,5 @@
     const capacity=a.capacity==="low"?"Carga alta: se priorizan pasos ligeros.":a.capacity==="medium"?"Carga moderada: se evita añadir complejidad.":"Carga equilibrada.";
     const learned=learningSummary(state);const sampleCount=learned.reduce((n,x)=>n+x.samples,0);return {trend,capacity,active:a.activeCount,completed:a.completedRecent,missed:a.missedRecent,learningSamples:sampleCount,learning:learned};
   }
-  global.ShadowIntelligence={version:"1.1.0",analyze,create,sort,summary,learnOutcome,learningSummary};
+  global.ShadowIntelligence={version:"1.2.0",analyze,create,sort,summary,learnOutcome,learningSummary,predict,rebalance};
 })(window);
