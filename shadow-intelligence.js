@@ -44,12 +44,39 @@
     const score=Math.round((importance*0.35+urgency*0.25+progressNeed*0.2+(index===0?0.9:0.6)*0.1+loadFactor*0.1)*100);
     return {score,importance:Math.round(importance*100),urgency:Math.round(urgency*100)};
   }
-  function difficulty(goal,analysis){
+  function learningFor(state,category){
+    const records=state.intelligence&&Array.isArray(state.intelligence.outcomes)?state.intelligence.outcomes:[];
+    const samples=records.filter(x=>x.category===category).slice(-20);
+    const rate=samples.length?samples.filter(x=>x.success).length/samples.length:0.65;
+    return {samples:samples.length,rate,adjustment:samples.length<4?0:rate>=0.8?1:rate<0.4?-1:0};
+  }
+  function difficulty(goal,analysis,state){
+    const category=categoryOf(goal);
+    const learned=learningFor(state,category);
     let level=/examen|entrega|presentaci|proyecto final/i.test(goal)?3:2;
     if(analysis.trend==="needs-support")level=Math.max(1,level-1);
     if(analysis.capacity!=="normal")level=1;
-    if(analysis.trend==="positive"&&analysis.capacity==="normal")level=Math.min(3,level+0);
+    if(learned.samples>=4)level=clamp(level+learned.adjustment,1,3);
     return level;
+  }
+  function learnOutcome(state,mission,success,now=Date.now()){
+    if(!state.intelligence||typeof state.intelligence!=="object")state.intelligence={version:1,outcomes:[],adjustments:0};
+    if(!Array.isArray(state.intelligence.outcomes))state.intelligence.outcomes=[];
+    if(!mission||mission.learningRecorded)return false;
+    const category=mission.category||categoryOf(mission.objective||mission.title);
+    state.intelligence.outcomes.push({id:String(mission.id),category,success:!!success,difficulty:clamp(Number(mission.difficultyLevel)||2,1,3),period:mission.period||"custom",at:now});
+    state.intelligence.outcomes=state.intelligence.outcomes.slice(-120);
+    mission.learningRecorded=true;
+    return true;
+  }
+  function learningSummary(state){
+    const records=state.intelligence&&Array.isArray(state.intelligence.outcomes)?state.intelligence.outcomes:[];
+    const categories=["study","project","habit","wellbeing","general"];
+    return categories.map(category=>{
+      const rows=records.filter(x=>x.category===category).slice(-20);
+      const rate=rows.length?rows.filter(x=>x.success).length/rows.length:null;
+      return {category,samples:rows.length,rate,adjustment:rows.length<4?0:rate>=0.8?1:rate<0.4?-1:0};
+    });
   }
   function create(state,period,key,now=Date.now()){
     const a=analyze(state,now);
@@ -67,7 +94,7 @@
       const options=templates[cat]||templates.general;
       const template=options[(i+key.length)%options.length];
       const p=priority(goal,i,a,period);
-      const level=recovery?1:difficulty(goal,a);
+      const level=recovery?1:difficulty(goal,a,state);
       const xp=period==="daily"?[8,12,16][level-1]:period==="weekly"?[18,25,32][level-1]:[35,45,55][level-1];
       const title=recovery?template[0]:template[0];
       result.push({
@@ -93,7 +120,7 @@
     const a=analyze(state,now);
     const trend=a.trend==="positive"?"Progreso constante":a.trend==="needs-support"?"Carga en revisión":"Ritmo estable";
     const capacity=a.capacity==="low"?"Carga alta: se priorizan pasos ligeros.":a.capacity==="medium"?"Carga moderada: se evita añadir complejidad.":"Carga equilibrada.";
-    return {trend,capacity,active:a.activeCount,completed:a.completedRecent,missed:a.missedRecent};
+    const learned=learningSummary(state);const sampleCount=learned.reduce((n,x)=>n+x.samples,0);return {trend,capacity,active:a.activeCount,completed:a.completedRecent,missed:a.missedRecent,learningSamples:sampleCount,learning:learned};
   }
-  global.ShadowIntelligence={version:"1.0.0",analyze,create,sort,summary};
+  global.ShadowIntelligence={version:"1.1.0",analyze,create,sort,summary,learnOutcome,learningSummary};
 })(window);
