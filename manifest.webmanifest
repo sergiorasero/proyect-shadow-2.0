@@ -1,7 +1,7 @@
 {
-  "name": "PROJECT SHADOW 03.0",
+  "name": "PROJECT SHADOW 2.0",
   "short_name": "SHADOW",
-  "description": "Sistema personal de progresión y misiones",
+  "description": "Sistema personal de progresión, misiones inteligentes y desarrollo personal",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
