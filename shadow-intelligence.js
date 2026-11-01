@@ -120,7 +120,7 @@
     const active=missions.filter(m=>!m.done&&!m.paused&&Number(m.dueAt)>now);
     const next7=active.filter(m=>Number(m.dueAt)<=now+7*DAY);
     const byDay={};
-    for(let i=0;i<7;i++){const d=new Date(now+i*DAY);const key=d.toISOString().slice(0,10);byDay[key]=next7.filter(m=>new Date(m.dueAt).toISOString().slice(0,10)===key).length;}
+    for(let i=0;i<7;i++){const d=new Date(now+i*DAY);const key=[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");byDay[key]=next7.filter(m=>{const due=new Date(m.dueAt);return [due.getFullYear(),String(due.getMonth()+1).padStart(2,"0"),String(due.getDate()).padStart(2,"0")].join("-")===key;}).length;}
     const peak=Math.max(0,...Object.values(byDay));
     const outcomes=state.intelligence&&Array.isArray(state.intelligence.outcomes)?state.intelligence.outcomes:[];
     const doneByGoal={};
