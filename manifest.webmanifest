@@ -1,0 +1,18 @@
+{
+  "name": "PROJECT SHADOW 03.0",
+  "short_name": "SHADOW",
+  "description": "Sistema personal de progresión y misiones",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080c13",
+  "theme_color": "#080c13",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
