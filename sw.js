@@ -1,5 +1,5 @@
-const CACHE="project-shadow-v3-cache";
-const FILES=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./icon.svg"];
+const CACHE="project-shadow-v4-cache";
+const FILES=["./","./index.html","./styles.css","./app.js","./shadow-intelligence.js","./manifest.webmanifest","./icon.svg"];
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES))));
 self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
 self.addEventListener("fetch",event=>{
